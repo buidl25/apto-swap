@@ -1,0 +1,68 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SwapStatus {
+  PENDING
+  EVM_HTLC_CREATED
+  APTOS_HTLC_CREATED
+  USER_WITHDREW_APTOS
+  PREIMAGE_REVEALED
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum SwapDirection {
+  EVM_TO_APTOS
+  APTOS_TO_EVM
+}
+
+model Swap {
+  id               String       @id @default(uuid())
+  direction        SwapDirection
+  status           SwapStatus   @default(PENDING)
+  sender           String
+  recipient        String
+  fromTokenAddress String
+  toTokenAddress   String
+  amount           String
+  evmHtlcAddress   String?
+  aptosHtlcAddress String?
+  hashlock         String
+  preimage         String?
+  orderHash        String?
+  errorMessage     String?
+  timelock         Int
+  timestamp        Int
+  completedAt      Int?
+  cancelledAt      Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([sender])
+  @@index([recipient])
+  @@index([status])
+  @@map("swaps")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String?
+  walletAddress String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("users")
+}

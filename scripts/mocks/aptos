@@ -1,0 +1,16 @@
+#!/bin/bash
+# Mock Aptos CLI
+
+echo "--- MOCK APTOS CLI CALLED ---"
+echo "Arguments: $@"
+echo "Simulating successful transaction..."
+
+# Create a dummy transaction hash for scripts that need it
+if [[ "$@" == *"move run"* ]]; then
+    # A realistic-looking but fake transaction hash
+    TXN_HASH="0x$(head /dev/urandom | tr -dc a-f0-9 | head -c 64)"
+    echo "{\"Result\": {\"transaction_hash\": \"$TXN_HASH\"}}"
+fi
+
+exit 0
+

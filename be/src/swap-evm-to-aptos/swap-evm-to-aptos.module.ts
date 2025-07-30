@@ -1,0 +1,13 @@
+import { Module } from "@nestjs/common";
+import { SwapEvmToAptosService } from "./swap-evm-to-aptos.service";
+import { SwapEvmToAptosController } from "./swap-evm-to-aptos.controller";
+import { PrismaModule } from "../prisma/prisma.module";
+import { FusionModule } from "../fusion/fusion.module";
+import { AptosModule } from "../aptos/aptos.module";
+
+@Module({
+  imports: [PrismaModule, FusionModule, AptosModule],
+  providers: [SwapEvmToAptosService],
+  controllers: [SwapEvmToAptosController],
+})
+export class SwapEvmToAptosModule {}
