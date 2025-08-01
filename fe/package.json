@@ -9,32 +9,35 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "next": "15.4.2",
-    "@aptos-labs/wallet-adapter-react": "^2.1.0",
+    "@1inch/cross-chain-sdk": "0.1.14",
     "@aptos-labs/ts-sdk": "^1.5.1",
-    "petra-plugin-wallet-adapter": "^0.4.5",
+    "@aptos-labs/wallet-adapter-react": "^2.1.0",
+    "@headlessui/react": "^2.2.7",
+    "@metamask/providers": "^22.1.0",
     "@web3-react/core": "^8.2.3",
     "@web3-react/metamask": "^8.2.4",
-    "ethers": "^6.10.0",
     "axios": "^1.6.7",
+    "ethers": "^6.10.0",
+    "next": "15.4.2",
+    "petra-plugin-wallet-adapter": "^0.4.5",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-query": "^3.39.3",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^2.0.0",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
-    "postcss": "^8",
+    "@typescript-eslint/eslint-plugin": "^7",
+    "@typescript-eslint/parser": "^7",
     "autoprefixer": "^10",
     "eslint": "^8.56.0",
     "eslint-config-next": "15.4.2",
-    "@eslint/eslintrc": "^2.0.0",
-    "@typescript-eslint/eslint-plugin": "^7",
-    "@typescript-eslint/parser": "^7"
+    "postcss": "^8",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }

@@ -16,6 +16,7 @@ import { AptosHtlcMonitorModule } from "./workers/aptos-htlc-monitor.module";
 import { EvmHtlcMonitorModule } from "./workers/evm-htlc-monitor.module";
 import { RefundHandlerModule } from "./workers/refund-handler.module";
 import { RecoveryModule } from "./workers/recovery.module";
+import { EscrowWorkerModule } from "./workers/escrow.worker.module";
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { RecoveryModule } from "./workers/recovery.module";
     FusionModule,
     RefundHandlerModule,
     RecoveryModule,
+    EscrowWorkerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

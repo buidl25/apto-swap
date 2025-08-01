@@ -57,6 +57,100 @@ model Swap {
   @@map("swaps")
 }
 
+model EvmOrder {
+  id               String       @id @default(uuid())
+  direction        SwapDirection
+  status           SwapStatus   @default(PENDING)
+  sender           String 
+  fromTokenAddress String
+  toTokenAddress   String
+  amount           String
+  evmHtlcAddress   String? 
+  hashlock         String 
+  orderHash        String?
+  errorMessage     String?
+  timelock         Int
+  timestamp        Int
+  completedAt      Int?
+  cancelledAt      Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([sender]) 
+  @@index([status])
+  @@map("evm_order")
+}
+
+model AptosOrder {
+  id               String       @id @default(uuid())
+  direction        SwapDirection
+  status           SwapStatus   @default(PENDING)
+  sender           String 
+  fromTokenAddress String
+  toTokenAddress   String
+  amount           String
+  aptosHtlcAddress String? 
+  hashlock         String 
+  orderHash        String?
+  errorMessage     String?
+  timelock         Int
+  timestamp        Int
+  completedAt      Int?
+  cancelledAt      Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([sender]) 
+  @@index([status])
+  @@map("aptos_order")
+}
+
+model EvmEscrow {
+  id               String       @id @default(uuid())
+  direction        SwapDirection
+  status           SwapStatus   @default(PENDING)
+  sender           String 
+  fromTokenAddress String 
+  amount           String
+  evmHtlcAddress   String? 
+  hashlock         String 
+  orderHash        String?
+  errorMessage     String?
+  timelock         Int
+  timestamp        Int
+  completedAt      Int?
+  cancelledAt      Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([sender]) 
+  @@index([status])
+  @@map("evm_escrow")
+}
+
+model AptosEscrow {
+  id               String       @id @default(uuid())
+  direction        SwapDirection
+  status           SwapStatus   @default(PENDING)
+  sender           String  
+  fromTokenAddress String 
+  amount           String
+  aptosHtlcAddress String? 
+  hashlock         String 
+  orderHash        String?
+  errorMessage     String?
+  timelock         Int
+  timestamp        Int
+  completedAt      Int?
+  cancelledAt      Int?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([sender]) 
+  @@index([status])
+  @@map("aptos_escrow")
+}
+
 model User {
   id            Int      @id @default(autoincrement())
   name          String?

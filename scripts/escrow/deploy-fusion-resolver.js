@@ -18,7 +18,7 @@ async function main() {
   // Get the EscrowFactory address from environment or deploy a new one
   // from scripts/vars/escrow-factory-address.json
   // scripts/vars/escrow-factory-address.json
-  let escrowFactoryAddress = process.env.ESCROW_FACTORY_ADDRESS;
+  let escrowFactoryAddress = null;
 
   if (!escrowFactoryAddress) {
     console.log("No EscrowFactory address provided. Trying to load from file...");
@@ -65,6 +65,12 @@ async function main() {
     "fusion-resolver-address": fusionResolverAddress
   }, null, 2));
   console.log(`Resolver address saved to: ${resolverAddressFile}`);
+
+  const resolverAddressFileBackend = path.join(varsDir, "../../../be/vars", "fusion-resolver-address.json");
+  fs.writeFileSync(resolverAddressFileBackend, JSON.stringify({
+    "fusion-resolver-address": fusionResolverAddress
+  }, null, 2));
+  console.log(`Resolver address saved to: ${resolverAddressFileBackend}`);
 
   return { fusionResolver, fusionResolverAddress, escrowFactoryAddress, limitOrderProtocolAddress };
 }

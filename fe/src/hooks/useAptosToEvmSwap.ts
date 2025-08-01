@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SwapService } from '../services/swap.service';
-import { AptosService } from '../services/aptos.service';
+// import { AptosService } from '../services/aptos.service';
 // Assuming you have a wallet connection context/hook for EVM and Aptos
 // import { useEvmWallet } from './useEvmWallet';
 // import { useAptosWallet } from './useAptosWallet';
@@ -13,7 +13,7 @@ export const useAptosToEvmSwap = () => {
   // const { sendTransaction: sendEvmTransaction, account: evmAccount } = useEvmWallet();
   // const { signAndSubmitTransaction: sendAptosTransaction, account: aptosAccount } = useAptosWallet();
 
-  const initiateSwap = async (swapDetails: any) => {
+  const initiateSwap = async (swapDetails: unknown) => {
     setStatus('initiating');
     setMessage('Initiating Aptos to EVM swap...');
     setTransactionHash(undefined);

@@ -1,9 +1,40 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ethers } from "ethers";
-// Import the ABI directly using path.join for cross-platform compatibility
 import * as path from "path";
 import * as fs from "fs";
+
+import * as EscrowFactory from "../../ABIs/EscrowFactory.json";
+import * as EscrowSrc from "../../ABIs/EscrowSrc.json";
+import * as FusionResolver from "../../ABIs/FusionResolver.json";
+import * as TestEvmToken from "../../ABIs/TestEvmToken.json";
+import * as EscrowFactoryAddress from "../../vars/escrow-factory-address.json";
+import * as FusionResolverAddress from "../../vars/fusion-resolver-address.json";
+import * as EvmTokenAddress from "../../vars/evm-token-address.json";
+
+interface AddressJson {
+  "escrow-src-address": string;
+  "escrow-factory-address": string;
+  "fusion-resolver-address": string;
+  "evm-token-address": string;
+}
+
+const readAddressFile = (fileName: string): AddressJson => {
+  try {
+    const filePath = path.join(__dirname, `../../vars/${fileName}`);
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    const parsed = JSON.parse(fileContent) as unknown;
+
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error(`Invalid JSON format in ${fileName}`);
+    }
+
+    return parsed as AddressJson;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Failed to read address file ${fileName}: ${message}`);
+  }
+};
 
 // Read the ABI file directly from the file system
 const abiPath = path.join(
@@ -14,10 +45,20 @@ const abiPath = path.join(
 interface AbiJson {
   abi: ethers.InterfaceAbi;
 }
+interface ContractABI {
+  abi: ethers.InterfaceAbi;
+}
+
 const EthereumHTLC_ABI_JSON = JSON.parse(
   fs.readFileSync(abiPath, "utf8"),
 ) as AbiJson;
 const EthereumHTLC_ABI: ethers.InterfaceAbi = EthereumHTLC_ABI_JSON.abi;
+
+const EscrowFactoryABI = EscrowFactory as unknown as ContractABI;
+
+const EscrowSrcABI = EscrowSrc as unknown as ContractABI;
+const FusionResolverABI = FusionResolver as unknown as ContractABI;
+const TestEvmTokenABI = TestEvmToken as unknown as ContractABI;
 
 @Injectable()
 export class EvmService implements OnModuleInit {
@@ -25,6 +66,10 @@ export class EvmService implements OnModuleInit {
   private provider: ethers.JsonRpcProvider;
   private wallet: ethers.Wallet;
   private htlcContract: ethers.Contract;
+  private escrowFactoryContract: ethers.Contract;
+  private escrowSrcContract: ethers.Contract;
+  private fusionResolverContract: ethers.Contract;
+  private testEvmTokenContract: ethers.Contract;
 
   constructor(private configService: ConfigService) { }
 
@@ -33,13 +78,10 @@ export class EvmService implements OnModuleInit {
     const relayerPrivateKey = this.configService.get<string>(
       "RELAYER_PRIVATE_KEY_EVM",
     );
-    const htlcContractAddress = this.configService.get<string>(
-      "EVM_HTLC_CONTRACT_ADDRESS",
-    ); // TODO: Get this from a more robust source
 
-    if (!rpcUrl || !relayerPrivateKey || !htlcContractAddress) {
+    if (!rpcUrl || !relayerPrivateKey) {
       this.logger.error(
-        "Missing EVM configuration. Please check EVM_RPC_URL, RELAYER_PRIVATE_KEY_EVM, and EVM_HTLC_CONTRACT_ADDRESS in your .env file.",
+        "Missing EVM configuration. Please check EVM_RPC_URL, RELAYER_PRIVATE_KEY_EVM, ESCROW_FACTORY_ADDRESS, ESCROW_SRC_ADDRESS, FUSION_RESOLVER_ADDRESS, and TEST_EVM_TOKEN_ADDRESS in your .env file.",
       );
       return;
     }
@@ -47,40 +89,32 @@ export class EvmService implements OnModuleInit {
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
     this.wallet = new ethers.Wallet(relayerPrivateKey, this.provider);
 
-    this.htlcContract = new ethers.Contract(
-      htlcContractAddress,
-      EthereumHTLC_ABI,
+    this.escrowFactoryContract = new ethers.Contract(
+      EscrowFactoryAddress["escrow-factory-address"],
+      EscrowFactoryABI.abi,
+      this.wallet,
+    );
+
+    // this.escrowSrcContract = new ethers.Contract(
+    //   escrowSrcAddress,
+    //   EscrowSrcABI.abi,
+    //   this.wallet,
+    // );
+
+    this.fusionResolverContract = new ethers.Contract(
+      FusionResolverAddress["fusion-resolver-address"],
+      FusionResolverABI.abi,
+      this.wallet,
+    );
+
+    this.testEvmTokenContract = new ethers.Contract(
+      EvmTokenAddress["evm-token-address"],
+      TestEvmTokenABI.abi,
       this.wallet,
     );
 
     this.logger.log(`EVM Service initialized. Connected to ${rpcUrl}`);
-    this.logger.log(`HTLC Contract Address: ${htlcContractAddress}`);
     this.logger.log(`Relayer Address: ${this.wallet.address}`);
-
-    this.htlcContract.on(
-      "HTLCCreated",
-      (
-        contractId,
-        sender,
-        recipient,
-        token,
-        amount,
-        hashlock,
-        timelock,
-        event,
-      ) => {
-        this.logger.log("HTLCCreated Event Received:");
-        this.logger.log(`  Contract ID: ${contractId}`);
-        this.logger.log(`  Sender: ${sender}`);
-        this.logger.log(`  Recipient: ${recipient}`);
-        this.logger.log(`  Token: ${token}`);
-        this.logger.log(`  Amount: ${amount.toString()}`);
-        this.logger.log(`  Hashlock: ${hashlock}`);
-        this.logger.log(`  Timelock: ${timelock.toString()}`);
-        this.logger.log(`  Transaction Hash: ${event.log.transactionHash}`);
-        // TODO: Pass this event data to the SwapOrchestratorService
-      },
-    );
 
     this.logger.log("Listening for HTLCCreated events...");
   }
@@ -293,5 +327,33 @@ export class EvmService implements OnModuleInit {
         success: true,
       },
     };
+  }
+
+  getHtlcContract(): ethers.Contract {
+    return this.htlcContract;
+  }
+
+  getEscrowFactoryContract(): ethers.Contract {
+    return this.escrowFactoryContract;
+  }
+
+  getEscrowSrcContract(): ethers.Contract {
+    return this.escrowSrcContract;
+  }
+
+  getFusionResolverContract(): ethers.Contract {
+    return this.fusionResolverContract;
+  }
+
+  getTestEvmTokenContract(): ethers.Contract {
+    return this.testEvmTokenContract;
+  }
+
+  getWalletAddress(): string {
+    return this.wallet.address;
+  }
+
+  getEscrowFactoryAbi(): ethers.InterfaceAbi {
+    return EscrowFactory.abi;
   }
 }

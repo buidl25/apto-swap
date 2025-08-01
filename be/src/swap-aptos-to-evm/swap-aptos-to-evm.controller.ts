@@ -8,11 +8,12 @@ import {
   SwapHistoryDto,
 } from "./dto/swap-aptos-to-evm.dto";
 import { SwapStatusDto } from "../shared/dto/swap.dto";
+import { EscrowAptosDto } from "./dto/escrow.aptos.dto";
 
 @ApiTags("swap-aptos-to-evm")
 @Controller("swap-aptos-to-evm")
 export class SwapAptosToEvmController {
-  constructor(private readonly swapAptosToEvmService: SwapAptosToEvmService) {}
+  constructor(private readonly swapAptosToEvmService: SwapAptosToEvmService) { }
 
   @Post("initiate")
   @ApiOperation({ summary: "Initiate swap from Aptos to EVM" })
@@ -74,5 +75,16 @@ export class SwapAptosToEvmController {
   })
   getSwapHistory() {
     return this.swapAptosToEvmService.getSwapHistory();
+  }
+
+  @Get("test-escrow")
+  @ApiOperation({ summary: "Get escrow of Aptos to EVM swaps" })
+  @ApiResponse({
+    status: 200,
+    description: "Returns escrow",
+    type: EscrowAptosDto,
+  })
+  getEscrow() {
+    return this.swapAptosToEvmService.getAptosEscrow();
   }
 }

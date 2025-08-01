@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, SwapStatus } from "@prisma/client";
 
 @Injectable()
 export class DbService
@@ -220,6 +220,122 @@ export class DbService
       this.logger.error(`Error deleting user: ${(error as Error).message}`);
       throw error;
     }
+  }
+
+  // EVM Order CRUD operations
+  async createEvmOrder(data: Prisma.EvmOrderCreateInput) {
+    return await this.evmOrder.create({ data });
+  }
+
+  async findEvmOrderById(id: string) {
+    const order = await this.evmOrder.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException(`EvmOrder with ID ${id} not found`);
+    return order;
+  }
+
+  async findEvmOrdersBySender(sender: string) {
+    return await this.evmOrder.findMany({ where: { sender } });
+  }
+
+  async findEvmOrdersByStatus(status: SwapStatus) {
+    return await this.evmOrder.findMany({ where: { status } });
+  }
+
+  async updateEvmOrder(id: string, data: Prisma.EvmOrderUpdateInput) {
+    await this.findEvmOrderById(id); // Verify exists
+    return await this.evmOrder.update({ where: { id }, data });
+  }
+
+  async deleteEvmOrder(id: string) {
+    await this.findEvmOrderById(id); // Verify exists
+    return await this.evmOrder.delete({ where: { id } });
+  }
+
+  // Aptos Order CRUD operations
+  async createAptosOrder(data: Prisma.AptosOrderCreateInput) {
+    return await this.aptosOrder.create({ data });
+  }
+
+  async findAptosOrderById(id: string) {
+    const order = await this.aptosOrder.findUnique({ where: { id } });
+    if (!order) throw new NotFoundException(`AptosOrder with ID ${id} not found`);
+    return order;
+  }
+
+  async findAptosOrdersBySender(sender: string) {
+    return await this.aptosOrder.findMany({ where: { sender } });
+  }
+
+  async findAptosOrdersByStatus(status: SwapStatus) {
+    return await this.aptosOrder.findMany({ where: { status } });
+  }
+
+  async updateAptosOrder(id: string, data: Prisma.AptosOrderUpdateInput) {
+    await this.findAptosOrderById(id); // Verify exists
+    return await this.aptosOrder.update({ where: { id }, data });
+  }
+
+  async deleteAptosOrder(id: string) {
+    await this.findAptosOrderById(id); // Verify exists
+    return await this.aptosOrder.delete({ where: { id } });
+  }
+
+  // EVM Escrow CRUD operations
+  async createEvmEscrow(data: Prisma.EvmEscrowCreateInput) {
+    return await this.evmEscrow.create({ data });
+  }
+
+  async findEvmEscrowById(id: string) {
+    const escrow = await this.evmEscrow.findUnique({ where: { id } });
+    if (!escrow) throw new NotFoundException(`EvmEscrow with ID ${id} not found`);
+    return escrow;
+  }
+
+  async findEvmEscrowsBySender(sender: string) {
+    return await this.evmEscrow.findMany({ where: { sender } });
+  }
+
+  async findEvmEscrowsByStatus(status: SwapStatus) {
+    return await this.evmEscrow.findMany({ where: { status } });
+  }
+
+  async updateEvmEscrow(id: string, data: Prisma.EvmEscrowUpdateInput) {
+    await this.findEvmEscrowById(id); // Verify exists
+    return await this.evmEscrow.update({ where: { id }, data });
+  }
+
+  async deleteEvmEscrow(id: string) {
+    await this.findEvmEscrowById(id); // Verify exists
+    return await this.evmEscrow.delete({ where: { id } });
+  }
+
+  // Aptos Escrow CRUD operations
+  async createAptosEscrow(data: Prisma.AptosEscrowCreateInput) {
+    return await this.aptosEscrow.create({ data });
+  }
+
+  async findAptosEscrowById(id: string) {
+    const escrow = await this.aptosEscrow.findUnique({ where: { id } });
+    if (!escrow) throw new NotFoundException(`AptosEscrow with ID ${id} not found`);
+    return escrow;
+  }
+
+  async findAptosEscrowsBySender(sender: string) {
+    return await this.aptosEscrow.findMany({ where: { sender } });
+  }
+
+  async findAptosEscrowsByStatus(status: SwapStatus) {
+    return await this.aptosEscrow.findMany({ where: { status } });
+  }
+
+  async updateAptosEscrow(id: string, data: Prisma.AptosEscrowUpdateInput) {
+    await this.findAptosEscrowById(id); // Verify exists
+    return await this.aptosEscrow.update({ where: { id }, data });
+  }
+
+  async deleteAptosEscrow(id: string) {
+    await this.findAptosEscrowById(id); // Verify exists
+    return await this.aptosEscrow.delete({ where: { id } });
   }
 
   /**

@@ -21,6 +21,7 @@ async function main() {
   console.log('process.argv :>>', process.argv)
   // Get the operation from environment variable or command line arguments
   const operation = process.env.OPERATION || process.argv[2] || "deploy";
+  console.log("🚀 ~ main ~ operation:", operation)
   console.log(`Operation: ${operation}`);
 
   switch (operation.toLowerCase()) {
@@ -75,6 +76,11 @@ async function deployEscrowFactory() {
 
     const addressFile = path.join(varsDir, "escrow-factory-address.json");
     fs.writeFileSync(addressFile, JSON.stringify({
+      "escrow-factory-address": escrowFactoryAddress
+    }, null, 2));
+
+    const addressFileBackend = path.join(varsDir, "../../be/vars", "escrow-factory-address.json");
+    fs.writeFileSync(addressFileBackend, JSON.stringify({
       "escrow-factory-address": escrowFactoryAddress
     }, null, 2));
 
@@ -155,8 +161,7 @@ async function createEscrow() {
     console.log('Deploy function fragment:', JSON.stringify(deployFunctionInfo));
 
     // Get the token address
-    let tokenAddress = process.env.EVM_TOKEN_ADDRESS;
-    console.log(`EVM_TOKEN_ADDRESS from env: ${tokenAddress}`);
+    let tokenAddress;
 
     if (!tokenAddress) {
       try {
@@ -302,7 +307,7 @@ async function createEscrow() {
     // Get the contract interface
     console.log("Getting contract interface...");
     console.log(`Factory address: ${factoryAddress}`);
-    
+
     // Use fragments instead of functions
     if (escrowFactory.interface && escrowFactory.interface.fragments) {
       console.log(`Factory contract methods:`, escrowFactory.interface.fragments.map(f => f.name).filter(Boolean));
@@ -384,18 +389,18 @@ async function createEscrow() {
       console.log('Attempting contract call with BigInt addresses...');
       console.log('Available contract methods:', Object.keys(escrowFactory));
       console.log('Is deploy a function?', typeof escrowFactory.deploy === 'function');
-      
+
       // Check if deploy function exists
       if (typeof escrowFactory.deploy !== 'function') {
         console.error('ERROR: deploy function not found on escrowFactory contract!');
         process.exit(1);
       }
-      
+
       // Add retry logic with exponential backoff
       const maxRetries = 3;
       let retryCount = 0;
       let tx;
-      
+
       while (retryCount < maxRetries) {
         try {
           console.log(`Attempt ${retryCount + 1}/${maxRetries} to deploy escrow...`);
@@ -405,7 +410,7 @@ async function createEscrow() {
         } catch (error) {
           retryCount++;
           console.error(`Error on attempt ${retryCount}:`, error.message);
-          
+
           if (error.code === 'EPIPE' || error.code === 'ECONNRESET') {
             console.log('Connection error detected. Retrying after a short delay...');
             if (retryCount < maxRetries) {
@@ -424,7 +429,7 @@ async function createEscrow() {
           }
         }
       }
-      
+
       if (!tx) {
         throw new Error('Failed to deploy escrow after multiple attempts');
       }

@@ -1,16 +1,11 @@
 
 import { ethers } from 'ethers';
 
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
 
 export const connectMetaMask = async (): Promise<string | null> => {
   if (typeof window.ethereum !== 'undefined') {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window?.ethereum as unknown as ethers.Eip1193Provider);
       const accounts = await provider.send('eth_requestAccounts', []);
       const account = accounts[0];
       console.log('MetaMask connected:', account);
@@ -29,7 +24,7 @@ export const connectMetaMask = async (): Promise<string | null> => {
 export const getAccount = async (): Promise<string | null> => {
   if (typeof window.ethereum !== 'undefined') {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
       const accounts = await provider.listAccounts();
       if (accounts.length > 0) {
         return accounts[0].address;
@@ -46,7 +41,7 @@ export const getAccount = async (): Promise<string | null> => {
 export const getEthBalance = async (address: string): Promise<string | null> => {
   if (typeof window.ethereum !== 'undefined') {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
       const balance = await provider.getBalance(address);
       return ethers.formatEther(balance);
     } catch (error) {
@@ -60,7 +55,7 @@ export const getEthBalance = async (address: string): Promise<string | null> => 
 export const getErc20Balance = async (tokenAddress: string, accountAddress: string): Promise<string | null> => {
   if (typeof window.ethereum !== 'undefined') {
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.BrowserProvider(window.ethereum as unknown as ethers.Eip1193Provider);
       const erc20Abi = [
         'function balanceOf(address owner) view returns (uint256)',
         'function decimals() view returns (uint8)',
@@ -80,14 +75,14 @@ export const getErc20Balance = async (tokenAddress: string, accountAddress: stri
 
 export const setupMetaMaskEventListeners = (onAccountsChanged: (accounts: string[]) => void, onChainChanged: (chainId: string) => void) => {
   if (typeof window.ethereum !== 'undefined') {
-    window.ethereum.on('accountsChanged', onAccountsChanged);
-    window.ethereum.on('chainChanged', onChainChanged);
+    // window.ethereum.on('accountsChanged', onAccountsChanged);
+    // window.ethereum.on('chainChanged', onChainChanged);
   }
 };
 
 export const removeMetaMaskEventListeners = (onAccountsChanged: (accounts: string[]) => void, onChainChanged: (chainId: string) => void) => {
   if (typeof window.ethereum !== 'undefined') {
-    window.ethereum.removeListener('accountsChanged', onAccountsChanged);
-    window.ethereum.removeListener('chainChanged', onChainChanged);
+    // window.ethereum?.removeListener('accountsChanged', onAccountsChanged);
+    // window.ethereum.removeListener('chainChanged', onChainChanged);
   }
 };

@@ -6,6 +6,7 @@ import {
   SwapHistoryDto,
 } from "./dto/swap-aptos-to-evm.dto";
 import { SwapStatusDto } from "../shared/dto/swap.dto";
+import { EscrowAptosDto } from "./dto/escrow.aptos.dto";
 
 @Injectable()
 export class SwapAptosToEvmService {
@@ -24,6 +25,17 @@ export class SwapAptosToEvmService {
       hashlock:
         "0x1234567890123456789012345678901234567890123456789012345678901234",
       timestamp: Math.floor(Date.now() / 1000),
+    });
+  }
+
+  getAptosEscrow(): Promise<EscrowAptosDto> {
+    this.logger.log("Getting Aptos to EVM escrow");
+    return Promise.resolve({
+      aptosHtlcAddress:
+        "0x6982a96aa68e520bc6f540295e9547689f07eabd89f4ba6aa2a2b45ffc8fa128",
+      evmHtlcAddress: "0x1234567890123456789012345678901234567890",
+      hashlock:
+        "0x1234567890123456789012345678901234567890123456789012345678901234",
     });
   }
 
