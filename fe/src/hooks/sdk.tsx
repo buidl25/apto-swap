@@ -43,17 +43,17 @@ interface TypedDataField {
     type: string;
 }
 
-interface Ethereum {
+interface EthereumProvider {
     on: (event: string, callback: (accounts: string[]) => void) => void;
     removeListener: (event: string, callback: (accounts: string[]) => void) => void;
-    send: (method: string, params: any[]) => Promise<any>;
+    send: (method: string, params: unknown[]) => Promise<unknown>;
 }
 
-declare global {
-    interface Window {
-        ethereum?: Ethereum;
-    }
-}
+// declare global {
+//     interface Window {
+//         ethereum?: EthereumProvider;
+//     }
+// }
 
 export const use1inchSDK = () => {
     const [provider, setProvider] = useState<Web3Provider | null>(null);
@@ -72,9 +72,9 @@ export const use1inchSDK = () => {
             if (window.ethereum) {
                 const provider = new Web3Provider(window.ethereum);
                 setProvider(provider);
-                window.ethereum.on('accountsChanged', handleAccountsChanged);
-                const accounts = await window.ethereum.send('eth_accounts', []);
-                handleAccountsChanged(accounts);
+                (window.ethereum as EthereumProvider).on('accountsChanged', handleAccountsChanged);
+                const accounts = await (window.ethereum as EthereumProvider).send('eth_accounts', [] as unknown[]);
+                handleAccountsChanged(accounts as string[]);
             }
         } catch (error) {
             console.error('Failed to connect wallet:', error);
@@ -87,7 +87,7 @@ export const use1inchSDK = () => {
 
         return () => {
             if (window.ethereum) {
-                window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+                (window.ethereum as EthereumProvider).removeListener('accountsChanged', handleAccountsChanged);
             }
         };
     }, [connectWallet, handleAccountsChanged]);
@@ -114,8 +114,11 @@ export const use1inchSDK = () => {
                             typedData.message as Record<string, any>
                         );
                     },
-                    ethCall: async (contractAddress: string, callData: string) => 
-                        window.ethereum.send('eth_call', [{ to: contractAddress, data: callData }, 'latest'])
+                    ethCall: async (contractAddress: string, callData: string): Promise<string> =>
+                        (await (window.ethereum as EthereumProvider).send('eth_call', [
+                            { to: contractAddress, data: callData },
+                            'latest'
+                        ] as unknown[])) as string
                 };
 
                 const sdkInstance = new SDK({
