@@ -109,7 +109,8 @@ model EvmEscrow {
   id               String       @id @default(uuid())
   direction        SwapDirection
   status           SwapStatus   @default(PENDING)
-  sender           String 
+  sender           String
+  recipient        String? 
   fromTokenAddress String 
   amount           String
   evmHtlcAddress   String? 
@@ -132,7 +133,8 @@ model AptosEscrow {
   id               String       @id @default(uuid())
   direction        SwapDirection
   status           SwapStatus   @default(PENDING)
-  sender           String  
+  sender           String 
+  recipient        String? 
   fromTokenAddress String 
   amount           String
   aptosHtlcAddress String? 

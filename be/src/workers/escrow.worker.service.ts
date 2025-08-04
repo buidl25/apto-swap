@@ -3,6 +3,8 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { DbService } from "prisma/src/db.service";
 import { SwapStatus } from "@prisma/client";
+import { AptosService } from "src/aptos/aptos.service";
+import { EvmService } from "src/evm/evm.service";
 
 @Injectable()
 export class EscrowWorkerService {
@@ -11,16 +13,18 @@ export class EscrowWorkerService {
   constructor(
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly db: DbService,
+    private readonly aptosService: AptosService,
+    private readonly evmService: EvmService,
   ) { }
 
   @Cron(CronExpression.EVERY_30_SECONDS, { name: "escrowWorker" })
   async escrowWorker() {
     this.logger.log("Checking pending escrows...");
-    
+
     // Get all pending escrows from both chains
     const [pendingEvmEscrows, pendingAptosEscrows] = await Promise.all([
       this.db.findEvmEscrowsByStatus(SwapStatus.PENDING),
-      this.db.findAptosEscrowsByStatus(SwapStatus.PENDING)
+      this.db.findAptosEscrowsByStatus(SwapStatus.PENDING),
     ]);
 
     // Process EVM escrows
@@ -44,7 +48,7 @@ export class EscrowWorkerService {
     }
 
     this.logger.log(
-      `Processed ${pendingEvmEscrows.length} EVM and ${pendingAptosEscrows.length} Aptos pending escrows`
+      `Processed ${pendingEvmEscrows.length} EVM and ${pendingAptosEscrows.length} Aptos pending escrows`,
     );
   }
 }

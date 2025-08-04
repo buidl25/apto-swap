@@ -8,7 +8,7 @@ import {
   SwapHistoryDto,
 } from "./dto/swap-aptos-to-evm.dto";
 import { SwapStatusDto } from "../shared/dto/swap.dto";
-import { EscrowAptosDto } from "./dto/escrow.aptos.dto";
+import { EscrowAptosDto } from "src/swap-evm-to-aptos/dto/swap-evm-to-aptos.dto";
 
 @ApiTags("swap-aptos-to-evm")
 @Controller("swap-aptos-to-evm")

@@ -15,3 +15,5 @@ node_modules
 aptos-contracts/build
 scripts/vars
 be/dist
+Dutch.md
+info.md

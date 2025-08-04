@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import {
   Injectable,
   Logger,
@@ -123,30 +124,79 @@ export class SwapEvmToAptosService {
         `Running test swap with status: ${escrowAptosDto.status}`,
       );
 
-      switch (escrowAptosDto.status) {
-        case SwapStatusEnum.HTLC_APTOS_CREATE:
-          this.logger.log("Creating test Aptos escrow");
+      // switch (escrowAptosDto.status) {
+      //   case SwapStatusEnum.HTLC_APTOS_CREATE: {
+      this.logger.log("Creating test Aptos escrow");
 
-          // Create test escrow in database
-          const escrow = await this.dbService.createAptosEscrow({
-            direction: SwapDirection.EVM_TO_APTOS,
-            status: SwapStatus.APTOS_HTLC_CREATED,
-            sender: escrowAptosDto.recipientAddress,
-            fromTokenAddress: escrowAptosDto.tokenAddress,
-            amount: escrowAptosDto.amount,
-            hashlock: escrowAptosDto.hashlock,
-            timelock: Number(escrowAptosDto.timelock),
-            timestamp: Math.floor(Date.now() / 1000),
-          });
+      // Convert amount to Aptos units (8 decimals)
+      //const aptosAmount = BigInt(escrowAptosDto.amount) * BigInt(10 ** 8);
 
-          return {
-            success: true,
-            message: "Test Aptos escrow created successfully",
-            escrowId: escrow.id,
-          };
+      // Generate order hash if not provided
+      const orderHash =
+        escrowAptosDto.hashlock ||
+        `0x${crypto.randomBytes(32).toString("hex")}`;
+
+      // Set default delays
+      const dstWithdrawalDelay = escrowAptosDto.timelock;
+      console.log(
+        "🚀 ~ SwapEvmToAptosService ~ runTestEscrowAptos ~ dstWithdrawalDelay:",
+        dstWithdrawalDelay,
+      );
+      const dstPublicWithdrawalDelay = Number(escrowAptosDto.timelock) + 600; // +10 mins
+      const dstCancellationDelay = escrowAptosDto.timelock;
+
+      try {
+        const payload = {
+          recipient: escrowAptosDto.recipientAddress,
+          amount: escrowAptosDto.amount,
+          hashlock: escrowAptosDto.hashlock,
+          timelock: Math.floor(Date.now() / 1000) + Number(dstWithdrawalDelay),
+          orderHash: escrowAptosDto.hashlock,
+          maker: escrowAptosDto.recipientAddress,
+          aptosAmount: escrowAptosDto.amount,
+          safetyDeposit: escrowAptosDto.amount,
+          dstWithdrawalDelay: dstWithdrawalDelay,
+          dstPublicWithdrawalDelay: dstPublicWithdrawalDelay,
+          dstCancellationDelay: dstCancellationDelay,
+        };
+        console.log(
+          "🚀 ~ SwapEvmToAptosService ~ runTestEscrowAptos ~ payload:",
+          payload,
+        );
+
+        const tx = await this.aptosService.createEscrow(payload);
+
+        // Create database record
+        const data = {
+          direction: SwapDirection.EVM_TO_APTOS,
+          status: SwapStatus.APTOS_HTLC_CREATED,
+          sender: escrowAptosDto.recipientAddress,
+          recipient: escrowAptosDto.recipientAddress,
+          fromTokenAddress: escrowAptosDto.tokenAddress,
+          amount: escrowAptosDto.amount,
+          hashlock: escrowAptosDto.hashlock,
+          timelock: Number(escrowAptosDto.timelock),
+          timestamp: Math.floor(Date.now() / 1000),
+          orderHash: tx.txHash,
+        };
+
+        const escrow = await this.dbService.createAptosEscrow(data);
+
+        return {
+          success: true,
+          message: "Test Aptos escrow created successfully",
+          escrowId: escrow?.id,
+        };
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(`Failed to create Aptos escrow: ${errorMessage}`);
+        throw new Error(`Failed to create Aptos escrow: ${errorMessage}`);
       }
-
-      return { success: false, message: "Unsupported test status" };
+      //   }
+      //   default:
+      //     return { success: false, message: "Unsupported test status" };
+      // }
     } catch (error: unknown) {
       if (error instanceof Error) {
         this.logger.error(`Failed to run test swap: ${error.message}`);
@@ -369,7 +419,7 @@ export class SwapEvmToAptosService {
           return { success: true, message: "Swap cancelled successfully" };
 
         default:
-          throw new Error(`Unsupported swap status: ${testSwapDto.status}`);
+          return { success: false, message: "Unsupported test status" };
       }
     } catch (error) {
       this.logger.error("Test swap failed", error);
@@ -451,23 +501,29 @@ export class SwapEvmToAptosService {
       ) {
         try {
           // Create HTLC on Aptos
-          const htlcResult = await this.aptosService.createAptosHtlc({
-            recipient: swap.recipient,
-            amount: swap.amount,
-            hashlock: swap.hashlock,
-            timelock: swap.timelock,
-          });
+          const htlcResult = null;
+          // await this.aptosService.createEscrow(
+          //  {
+          //    swap.orderHash ?? "",
+          //   swap.hashlock ?? "",
+          //   swap.recipient,
+          //   swap.amount,
+          //   "0",
+          //   swap.timelock?.toString() ?? "0",
+          //   "0",
+          //   "0",
+          //   swap.sender,}
+          // );
 
-          if (htlcResult.success) {
+          if (htlcResult) {
             // Update the swap with Aptos HTLC address
-            await this.dbService.updateSwap({
-              where: { id: swapId },
-              data: {
-                aptosHtlcAddress: htlcResult.htlcId,
-              },
-            });
-
-            this.logger.log(`Created Aptos HTLC with ID: ${htlcResult.htlcId}`);
+            // await this.dbService.updateSwap({
+            //   where: { id: swapId },
+            //   data: {
+            //     aptosHtlcAddress: htlcResult.txHash,
+            //   },
+            // });
+            // this.logger.log(`Created Aptos HTLC with ID: ${htlcResult.txHash}`);
           }
         } catch (htlcError: unknown) {
           const htlcErrorMessage =

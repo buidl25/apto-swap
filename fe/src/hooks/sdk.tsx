@@ -1,23 +1,16 @@
-import {
-    HashLock,
-    NetworkEnum,
-    OrderStatus,
-    PresetEnum,
-    SDK,
-    BlockchainProviderConnector,
-    SupportedChain
-} from '@1inch/cross-chain-sdk'
-import { initializeConnector } from '@web3-react/core'
-import { MetaMask } from '@web3-react/metamask'
-import { ethers } from 'ethers'
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react';
+import { SDK, BlockchainProviderConnector } from '@1inch/cross-chain-sdk';
+import { initializeConnector } from '@web3-react/core';
+import { MetaMask } from '@web3-react/metamask';
+import { Web3Provider } from '@ethersproject/providers';
+import { ethers } from 'ethers';
+import { createSwapOrder } from './sdk-server';
 
 interface TypedDataDomain {
     name?: string
     version?: string
     chainId?: number
     verifyingContract?: string
-    salt?: string
 }
 
 interface TypedDataType {
@@ -39,69 +32,70 @@ interface TypedData {
     message: TypedDataMessage
 }
 
-export interface EthereumProvider extends ethers.Eip1193Provider {
-    on: (event: string, callback: (...args: unknown[]) => void) => void;
-    removeListener: (event: string, callback: (...args: unknown[]) => void) => void;
-    request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+interface EIP712TypedData {
+    domain: TypedDataDomain;
+    types: Record<string, Array<TypedDataField>>;
+    message: Record<string, any>;
 }
 
-// declare global {
-//     interface Window {
-//         ethereum?: EthereumProvider;
-//     }
-// }
+interface TypedDataField {
+    name: string;
+    type: string;
+}
 
-import { createSwapOrder } from './sdk-server';
+interface Ethereum {
+    on: (event: string, callback: (accounts: string[]) => void) => void;
+    removeListener: (event: string, callback: (accounts: string[]) => void) => void;
+    send: (method: string, params: any[]) => Promise<any>;
+}
+
+declare global {
+    interface Window {
+        ethereum?: Ethereum;
+    }
+}
 
 export const use1inchSDK = () => {
-    const [provider, setProvider] = useState<EthereumProvider | null>(null)
-    const [account, setAccount] = useState<string | null>(null)
+    const [provider, setProvider] = useState<Web3Provider | null>(null);
+    const [account, setAccount] = useState<string | null>(null);
 
-    // Initialize connector only on client side
+    const handleAccountsChanged = useCallback((accounts: unknown[]) => {
+        setAccount(accounts?.[0] as string || null);
+    }, []);
+
+    const connectWallet = useCallback(async () => {
+        try {
+            const [metaMask] = initializeConnector<MetaMask>(
+                (actions) => new MetaMask({ actions })
+            );
+            await metaMask.activate();
+            if (window.ethereum) {
+                const provider = new Web3Provider(window.ethereum);
+                setProvider(provider);
+                window.ethereum.on('accountsChanged', handleAccountsChanged);
+                const accounts = await window.ethereum.send('eth_accounts', []);
+                handleAccountsChanged(accounts);
+            }
+        } catch (error) {
+            console.error('Failed to connect wallet:', error);
+        }
+    }, [handleAccountsChanged]);
+
     useEffect(() => {
         if (typeof window === 'undefined') return;
-
-        const [metaMask] = initializeConnector<MetaMask>(
-            (actions) => new MetaMask({ actions })
-        );
-
-        const handleAccountsChanged = (accounts: unknown[]) => {
-            setAccount(Array.isArray(accounts) && typeof accounts[0] === 'string' ? accounts[0] : null);
-        };
-
-        // Connect to MetaMask and set up listeners
-        const connect = async () => {
-            try {
-                await metaMask.activate();
-                if (window.ethereum) {
-                    setProvider(window?.ethereum as EthereumProvider);
-                    // window.ethereum.on('accountsChanged', handleAccountsChanged);
-
-                    // // Get initial account
-                    // const accounts = await window.ethereum?.request({
-                    //     method: 'eth_accounts'
-                    // }) as string[];
-                    // setAccount(accounts[0] || null);
-                }
-            } catch (error) {
-                console.error('Failed to connect to MetaMask:', error);
-            }
-        };
-
-        connect();
+        connectWallet();
 
         return () => {
-            // if (window.ethereum) {
-            //     window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-            // }
+            if (window.ethereum) {
+                window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+            }
         };
-    }, []);
+    }, [connectWallet, handleAccountsChanged]);
 
     const [sdk, setSdk] = useState<SDK | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    // Initialize SDK when provider or account changes
     useEffect(() => {
         const initSDK = async () => {
             if (!provider || !account) {
@@ -111,24 +105,23 @@ export const use1inchSDK = () => {
 
             try {
                 setIsLoading(true)
-                const web3Provider = new ethers.BrowserProvider(provider)
-                const signer = await web3Provider.getSigner()
+                const signer = provider.getSigner();
+                const typedSigner: BlockchainProviderConnector = {
+                    signTypedData: async (walletAddress: string, typedData: EIP712TypedData) => {
+                        return signer._signTypedData(
+                            typedData.domain as TypedDataDomain,
+                            typedData.types as Record<string, Array<TypedDataField>>,
+                            typedData.message as Record<string, any>
+                        );
+                    },
+                    ethCall: async (contractAddress: string, callData: string) => 
+                        window.ethereum.send('eth_call', [{ to: contractAddress, data: callData }, 'latest'])
+                };
 
                 const sdkInstance = new SDK({
                     url: 'https://api.1inch.dev/fusion-plus',
-                    authKey: process.env.NEXT_ONE_INCH_API_KEY,
-                    blockchainProvider: {
-                        getWalletAddress: () => signer.getAddress(),
-                        signTypedData: (walletAddress: string, typedData: TypedData) =>
-                            signer.signTypedData(typedData.domain, typedData.types, typedData.message),
-                        signTypedDataV4: (walletAddress: string, typedData: TypedData) =>
-                            signer.signTypedData(typedData.domain, typedData.types, typedData.message),
-                        ethCall: (contractAddress: string, callData: string) => provider.request({
-                            method: 'eth_call',
-                            params: [{ to: contractAddress, data: callData }, 'latest']
-                        })
-                    } as unknown as BlockchainProviderConnector
-                })
+                    blockchainProvider: typedSigner
+                });
 
                 setSdk(sdkInstance)
                 setError(null)
@@ -144,24 +137,17 @@ export const use1inchSDK = () => {
         initSDK()
     }, [provider, account])
 
-    // Generate random bytes compatible with browser
     const generateRandomBytes = useCallback((length: number) => {
         return ethers.hexlify(ethers.randomBytes(length))
     }, [])
 
-    // Connect MetaMask
-    const connectWallet = useCallback(() => {
-        // metaMask.activate().catch(console.error)
-    }, [])
-
-    // Create order function
     const createOrder = useCallback(async (
         amount: string,
-        srcChainId: NetworkEnum,
-        dstChainId: NetworkEnum,
+        srcChainId: number,
+        dstChainId: number,
         srcTokenAddress: string,
         dstTokenAddress: string,
-        preset: PresetEnum = PresetEnum.fast
+        preset: string = 'fast'
     ) => {
         if (!account) {
             throw new Error('Account not connected');

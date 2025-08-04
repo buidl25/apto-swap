@@ -160,7 +160,7 @@ export class EscrowAptosDto {
   @ApiProperty({
     description: "Swap ID",
     example:
-      "0x1234567890123456789012345678901234567890123456789012345678901234",
+      "0x6982a96aa68e520bc6f540295e9547689f07eabd89f4ba6aa2a2b45ffc8fa128",
   })
   @IsString()
   readonly swapId: string;
@@ -168,14 +168,14 @@ export class EscrowAptosDto {
   @ApiProperty({
     description: "Recipient Aptos address",
     example:
-      "0x1234567890123456789012345678901234567890123456789012345678901234",
+      "0x318942fc76d84578ab2efc2c85ed031d06c4f444f3cdae9bbaf09901677b573f",
   })
   @IsString()
   readonly recipientAddress: string;
 
   @ApiProperty({
     description: "Token amount",
-    example: "555",
+    example: "1",
   })
   @IsString()
   readonly amount: string;

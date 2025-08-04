@@ -6,8 +6,7 @@ import {
   SwapHistoryDto,
 } from "./dto/swap-aptos-to-evm.dto";
 import { SwapStatusDto } from "../shared/dto/swap.dto";
-import { EscrowAptosDto } from "./dto/escrow.aptos.dto";
-
+import { EscrowAptosDto } from "src/swap-evm-to-aptos/dto/swap-evm-to-aptos.dto";
 @Injectable()
 export class SwapAptosToEvmService {
   private readonly logger = new Logger(SwapAptosToEvmService.name);
@@ -28,7 +27,7 @@ export class SwapAptosToEvmService {
     });
   }
 
-  getAptosEscrow(): Promise<EscrowAptosDto> {
+  getAptosEscrow(): Promise<any> {
     this.logger.log("Getting Aptos to EVM escrow");
     return Promise.resolve({
       aptosHtlcAddress:
